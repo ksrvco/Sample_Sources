@@ -1,0 +1,1 @@
+This is a simple program that can be run in kernel mode and user mode and it counts and calculates the sum of numbers from 1 to 1000000. These programs are coded with the aim of finding out which mode, kernel mode or user mode, is faster to run a program?
