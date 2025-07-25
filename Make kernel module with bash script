@@ -1,0 +1,58 @@
+### alfa.c
+
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/kmod.h>   
+
+int init_module(void) {
+    char *argv[] = { "/bin/bash", "-c", "echo 1 >> /tmp/testfile", NULL };
+    char *envp[] = { "HOME=/", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
+
+    printk(KERN_INFO "Alfa module loaded!\n");
+
+    // Execute the command
+    int ret = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
+
+    if (ret != 0) {
+        printk(KERN_ERR "Failed to execute the command, return code: %d\n", ret);
+    } else {
+        printk(KERN_INFO "Command executed successfully.\n");
+    }
+
+    return 0;
+}
+
+void cleanup_module(void) {
+    printk(KERN_INFO "Alfa module unloaded!\n");
+}
+
+MODULE_LICENSE("GPL");
+
+
+
+===========================
+
+
+### Makefile
+obj-m += alfa.o
+
+
+
+============================
+
+### How to make?
+make -C /lib/modules/6.1.0-22-amd64/build M=$PWD
+
+
+============================
+
+
+### Make persistent after system reboot:
+mkdir -p /lib/modules/6.1.0-22-amd64/kernel/drivers/alfa
+cp -r alfa.ko /lib/modules/6.1.0-22-amd64/kernel/drivers/alfa
+depmod -a 
+modprobe alfa
+echo "alfa" >> /etc/modules
+dmesg
+
+# Now after reboot system you can run command "modprobe alfa"  to load module.
